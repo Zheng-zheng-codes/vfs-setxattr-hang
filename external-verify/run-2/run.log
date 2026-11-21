@@ -1,0 +1,6 @@
+[2026-11-21 13:13:07] tag=vfs-2 prog=/workspace/validation/replay-sweep-20261121/recipes/11.prog sha=1e2870c52d4be64062190aa84fa6f46718369f6fb199cff777bcafe491e9e7d6 runsec=900 procs=1 repeat=1 cores=16-23 port=12982
+[2026-11-21 13:17:22] ssh-up after 81s
+[2026-11-21 13:17:43] starting syz-execprog (detached)
+STARTED
+[2026-11-21 13:21:08] exec elapsed=205s hit=1
+[2026-11-21 13:21:13] TARGET-HIT: vfs_setxattr+0x

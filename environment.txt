@@ -1,0 +1,34 @@
+bug: INFO: task hung in vfs_setxattr
+kernel: Linux v7.4-rc3 (7.4.0-rc3-kernsight-kasan #1)
+kernel image: arch/x86/boot/bzImage, sha256
+  0c16409f8aec508ac44a63e631c2bd352536401f3fd0856df1d839fb953a1882
+kernel config: kernel.config at the repository root
+  (CONFIG_KASAN=y, CONFIG_PROVE_LOCKING=y, CONFIG_XFS_FS=y,
+   CONFIG_DEBUG_INFO=y)
+
+guest image: Debian trixie x86_64 (syzkaller standard image), 6 GiB RAM,
+  4 vCPU, KVM
+guest image file: trixie-7.4-rc3.img, sha256
+  e16dcf2362229a1d8cd786e94236d0d0939f6eef55cf1cff058a90b0a1d9c99e
+
+QEMU command line:
+  qemu-system-x86_64 -m 6144 -smp 4 -enable-kvm -cpu host \
+    -drive file=disk.qcow2,if=ide,format=qcow2 \
+    -kernel arch/x86/boot/bzImage \
+    -append "root=/dev/sda console=ttyS0 fstab=no rw earlyprintk=serial net.ifnames=0 oops=panic panic_on_warn=1 panic=86400 hung_task_panic=0 softlockup_panic=1 nmi_watchdog=panic sysctl.kernel.hung_task_all_cpu_backtrace=1 sysctl.kernel.panic_on_rcu_stall=1 sysctl.kernel.max_rcu_stall_to_panic=1 rcupdate.rcu_expedited=1 rcupdate.rcu_cpu_stall_cputime=1 no_hash_pointers page_owner=on sysctl.vm.nr_hugepages=4 sysctl.vm.nr_overcommit_hugepages=4 secretmem.enable=1 msr.allow_writes=off coredump_filter=0xffff vsyscall=native kvm-intel.nested=1 spec_store_bypass_disable=prctl nopcid vivid.n_devs=64 vivid.multiplanar=1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2 netrom.nr_ndevs=32 rose.rose_ndevs=32 smp.csd_lock_timeout=100000 watchdog_thresh=55 workqueue.watchdog_thresh=140 sysctl.net.core.netdev_unregister_timeout_secs=140 dummy_hcd.num=16 max_loop=32 nbd.nbds_max=32 comedi.comedi_num_legacy_minors=4 kunit.autorun=0 vcan.echo=1" \
+    -netdev user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22 -device e1000,netdev=net0 \
+    -display none -vga none -serial file:serial.log -no-reboot
+
+reproducer execution (in the guest, as root):
+  syz-execprog -procs=1 -threaded -repeat=1 \
+      -executor ./syz-executor reproducer/repro.kernsight.prog
+
+The reproducer is the crash-log tail (160 programs, log format) replayed
+sequentially; the hang appears during the replay.  The reproducer must run
+with -procs=1; -procs=8 did not reproduce the hang under our tests.
+
+Verification: 5/5 stability runs on fresh VMs (2026-11-21; see
+external-verify/ and README.md).
+
+syz-execprog / syz-executor built from syzkaller at commit
+  853b104bb454141a5b0fc0e4218ec78e9f34ffb1
