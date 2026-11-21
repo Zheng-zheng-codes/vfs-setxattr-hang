@@ -65,11 +65,49 @@ is required.
 
 ## Verification
 
-Stability verification on fresh VMs (fresh qcow2 overlay per run,
-sequential replay):
+The target was **independently reproduced five times**.  Each run booted a
+fresh VM from the supplied image with a brand-new qcow2 overlay — no
+snapshot reuse and no shared VM state — then executed the reproducer
+sequentially (`-procs=1 -threaded -repeat=1`).  All five runs hit the hung-task dump:
 
-- five independent runs: **5/5** reproductions, 181-205 s to the hung-task
-  dump in every run (2026-11-21); see `external-verify/`
+| run | hit | time to trigger |
+|---|---|---|
+| run-1 | yes | 181 s |
+| run-2 | yes | 205 s |
+| run-3 | yes | 198 s |
+| run-4 | yes | 182 s |
+| run-5 | yes | 197 s |
+
+See `external-verify/` for the per-run serial logs and harness logs.
+`-procs=8` did not reproduce the hang under our tests; sequential
+execution is required.
+
+## Repository contents
+
+```text
+README.md               this document
+environment.txt         kernel/guest hashes and the exact QEMU command line
+kernel.config           kernel configuration used for the reproduction
+description             original crash title
+SHA256SUMS              checksums for every file listed here
+logs/                   original crash evidence
+  description — original crash title
+  log0 — fuzzer log of the original crash
+  machineInfo0 — VM/environment record
+  pre_state0 — pre-crash state sample
+  report0 — crash report of the original crash
+  title-stat — occurrence statistics
+reproducer/             the reproducer and its provenance
+  repro.kernsight.prog — the reproducer: the crash-log tail (160 programs, log format) replayed sequentially; the hang appears during the replay itself
+  repro.report — raw crash report of the original crash
+external-verify/        five independent fresh-VM verification runs
+  README.md             stability methodology and per-run results
+  run-1 ... run-5/
+    serial.log — full guest console of the run
+    run.log — harness log with hashes and timings
+    execprog-out.log — syz-execprog stdout
+    HIT — marker written when the target appeared
+```
 
 ## Kernel / guest details
 
